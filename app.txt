@@ -1,0 +1,71 @@
+const express=require('express');
+const axios=require('axios');
+const redis=require('redis');
+const app=express();
+
+const baseURL='https://jsonplaceholder.typicode.com';
+let client=redis.createClient();
+client.on('error', (err) => {
+    console.log('Erreur Redis : ${err}');
+});
+
+app.use(express.json());
+app.use(express.static('static'));
+(req, res, next) => {
+    if (client.ready) {
+        const key = req.originalUrl;
+
+        client.get(key, (err, data) => {
+            if (err) throw err;
+
+            if (data !== null) {
+                console.log('exist in redis');
+                res.send(data);
+            } else {
+                res.sendResponse = res.send;
+                res.send = (body) => {
+                    console.log('does not exist in redis');
+                    client.setex(key, 3600, body); 
+                    res.sendResponse(body);
+                };
+               
+                next();
+            }
+        });
+    } else {
+        next();
+    }
+};
+app.use(async (req, res) => {
+    const response = await axios.get(baseURL + req.originalUrl);
+    console.log('does not exist in redis');
+    res.send(response.data);
+});
+// app.use(async (req,res,next)=>{
+//     console.log(req.originalUrl)
+//     if(await client.get(baseURL+req.originalUrl)!=null){
+//         console.log("exist in redis")
+//         res.send(client.get(baseURL+req.originalUrl))
+//     }
+//     else{
+//         next();
+//     }
+// })
+//redis
+// app.use(async (req, res, next) => {
+//     try {
+//       console.log('does not exist in redis');
+//       const response=await axios.get((baseURL+req.originalUrl));
+//       res.send(response.data);
+//       await client.set(baseURL+req.originalUrl, JSON.stringify(response.data));
+//       const value = await client.get(baseURL+req.originalUrl);
+//       console.log('redis ' + JSON.stringify(value));
+//       res.send(response.data)
+//     } catch (error) {
+//       res.send(error);
+//     }
+//   });
+
+
+
+app.listen(3000);

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxy</title>
+</head>
+<body>
+    <html>Proxy</html>
+    <button onclick="makeRequest1()">send 1 Request</button>
+    <button onclick="makeRequest(5)">send multi Requests</button>
+</body>
+
+<script>
+    async function makeRequest1(){
+        const res = await fetch('http://localhost:3000/users');
+        const data = await res.json();
+        console.log(data);
+    }
+    let start , end;
+    async function makeRequest(num){
+        start =Date.now();
+        const promises=new Array(num)
+        .fill(1)
+        .map((_,i)=>fetch('http://localhost:3000/users/1'));
+        const responses=await Promise.all(promises);
+        end =Date.now();
+        console.log(start-end,responses);
+    }
+    
+
+</script>
+</html>
